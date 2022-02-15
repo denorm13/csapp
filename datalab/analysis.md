@@ -221,7 +221,7 @@ int conditional(int x, int y, int z) {
   - 条件选择：`(x&y) | (~x&z)`, `x`位全为1或0
 
 
-8.`isLessOrEqual()`
+### 8.`isLessOrEqual()`
 ```C
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -245,7 +245,7 @@ int isLessOrEqual(int x, int y) {
 这个题目很简单，通过补码实现减法，然后分类确定即可。
 
 
-9.`logicalNeg`
+### 9.`logicalNeg`
 ```C
 /* 
  * logicalNeg - implement the ! operator, using all of 
@@ -268,7 +268,7 @@ int logicalNeg(int x) {
 **总结**：
 同7。
 
-10.`howManyBits()`
+### 10.`howManyBits()`
 ```C
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -314,7 +314,8 @@ int howManyBits(int x) {
 
 
 ## **Part 2** float
-1.`floatScale2()`
+
+### 1.`floatScale2()`
 ```C
 /* 
  * floatScale2 - Return bit-level equivalent of expression 2*f for
@@ -357,7 +358,7 @@ unsigned floatScale2(unsigned uf) {
 非规范化浮点数的指数域定义，使这个题目变得极为简单。这应该就是作者所说IEEE表示法的优点之一吧。
 
 
-2.`floatFloat2Int()`
+### 2.`floatFloat2Int()`
 ```C
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -414,7 +415,7 @@ int floatFloat2Int(unsigned uf) {
 只要理解了浮点数的表示，不难。
 
 
-3.`floatPower2`
+### 3.`floatPower2`
 ```C
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
