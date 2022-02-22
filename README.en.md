@@ -1,8 +1,8 @@
 # csapplab
 
 #### Intro 
-Record the process of learning csapplab, including src and analysis.
+Record the process of learning csapp, including labs and notes.
 
-#### Portal 
-1. datalab analysis: `./datalab/analysis.md
+#### Lab Analysis Portal 
+1. datalab analysis: `./csapplab/datalab/analysis.md
 2. ...
