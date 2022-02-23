@@ -20,10 +20,13 @@ $ objdump -d bin
 ### 3.2.1 数据访问与信息格式
 
 1. 三类访问对象：立即数、寄存器、储存器
+
 2. 数据格式：  
 ![datatype](./dataformat.png)
+
 3. 整数寄存器：
 ![integer rigisters](./registers.png)
+
 4. 指令格式：
 ![Operand forms](accessdata.png)
 
@@ -96,3 +99,65 @@ $ objdump -d bin
 > 计算相对地址时，基址为`jmp`指令下一条指令的地址
 
 ![jump](./jump.png)
+
+3. 使用数据的跳转：
+
+- 流水线(pipelining):   
+  x86-64处理器通过流水线提高性能，类似于将许多指令提前置于CPU内。  
+  使用控制的跳转指令的指令序列是不可预测的，而使用数据的跳转指令的指令序列是可预测的。因此后者时间成本期望较低。
+
+- 条件传送指令：  
+  ![conditional_move](./conditional_move.png)
+
+### 3.2.3 循环
+
+#### `do-while`循环
+
+循环模式：
+```
+do
+    body-statement;
+while (test-expr);
+```
+汇编等价的`goto`描述：
+```C
+loop:
+    body-statement;
+    t=test-expr;
+    if(t)
+        goto loop;
+```
+
+#### `while`循环
+
+循环模式：
+```
+t=test-expr;
+while(t)
+    body-statement;
+```
+汇编等价的`goto`描述：
+```C
+//1. jump to middle
+goto test;
+loop:
+    body-statement;
+test:
+    t=test-expr;
+    if(t)
+        goto loop;
+
+//2. guarded-do 
+t=test-expr;
+if(!t)
+    goto done;
+loop:
+    body-statement;
+    if(t)
+        goto loop;
+done:
+```
+
+#### `for`循环
+
+等价于特殊的`while`循环
