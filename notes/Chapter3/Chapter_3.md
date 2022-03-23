@@ -20,10 +20,13 @@ $ objdump -d bin
 ### 3.2.1 数据访问与信息格式
 
 1. 三类访问对象：立即数、寄存器、储存器
+
 2. 数据格式：  
 ![datatype](./dataformat.png)
+
 3. 整数寄存器：
 ![integer rigisters](./registers.png)
+
 4. 指令格式：
 ![Operand forms](accessdata.png)
 > 注：比例因子必须是1, 2, 4, 8
@@ -110,13 +113,17 @@ $ objdump -d bin
 
 ![jump](./jump.png)
 
+3. 条件传送指令：  
+![conditional_move](./conditional_move.png)
 
 
-### 3.2.3 机器级程序
+### 3.2.3 机器级程序结构
 
 #### 控制（条件分支、循环、条件跳转的实现）
 
-1. 条件分支(`if`)  
+##### 一、条件分支
+
+1. 条件控制的条件分支(`if`)  
 
 将如下C程序进行`-Og`编译后得到汇编代码：
 ```C
@@ -158,3 +165,190 @@ false:
 done:
     ...;
 ```
+2. 条件传送的条件分支：
+
+> 流水线(pipelining):   
+>  x86-64处理器通过流水线提高性能，CPU并发处理多条指令，因而可预测的指令序列是必须的。  
+>  使用控制的跳转指令的指令序列是不可预测的，而使用数据的跳转指令的指令序列是可预测的。因此后者时间成本期望较低。
+
+##### 二、循环
+
+1. `do-while`循环
+
+循环模式：
+```
+do
+    body-statement;
+while (test-expr);
+```
+汇编等价的`goto`描述：
+```C
+loop:
+    body-statement;
+    t=test-expr;
+    if(t)
+        goto loop;
+```
+
+2. `while`循环
+
+循环模式：
+```
+while(test-expr)
+    body-statement;
+```
+汇编等价的`goto`描述：
+```C
+//1. jump to middle
+goto test;
+loop:
+    body-statement;
+test:
+    t=test-expr;
+    if(t)
+        goto loop;
+
+//2. guarded-do 
+t=test-expr;
+if(!t)
+    goto done;
+loop:
+    body-statement;
+    t=test-expr;
+    if(t)
+        goto loop;
+done:
+```
+
+3. `for`循环
+
+等价于`while`循环
+
+
+
+##### `switch`与跳转表
+
+- switch的实现：  
+    将多个入口映射为一个代码块指针数组。
+- 逆向工程：  
+  - 确定映射关系
+  - 找到`default`代码块
+  - 一一对应
+
+```C
+void switcher(long a, long b, long c, long *dest)
+{
+    long val=0;
+    switch(a){
+        case 5:
+            c=b^15;
+        case 0:
+            val=c+112;
+            break;
+        case 2:
+        case 7:
+            val=(a+b)*4; 
+            break;
+        case 4:
+            val=a;
+            break;
+        default:
+            val=b;
+    }
+    *dest=val;
+}
+```
+
+`gcc`编译至汇编级别：
+```x86asm
+switcher:
+	endbr64
+	cmpq	$7, %rdi
+	ja	.L6
+	leaq	.L4(%rip), %r8
+	movslq	(%r8,%rdi,4), %rax
+	addq	%r8, %rax
+	notrack jmp	*%rax
+	.section	.rodata
+	.align 4
+	.align 4
+.L4:
+	.long	.L7-.L4
+	.long	.L6-.L4
+	.long	.L3-.L4
+	.long	.L6-.L4
+	.long	.L8-.L4
+	.long	.L5-.L4
+	.long	.L6-.L4
+	.long	.L3-.L4
+	.text
+.L5:
+	movq	%rsi, %rdx
+	xorq	$15, %rdx
+.L7:
+	leaq	112(%rdx), %rsi
+.L6:
+	movq	%rsi, (%rcx)
+	ret
+.L3:
+	addq	%rdi, %rsi
+	salq	$2, %rsi
+	jmp	.L6
+.L8:
+	movq	%rdi, %rsi
+	jmp	.L6
+```
+
+
+#### 过程
+
+> 过程：一个子例程，谓之过程。如C中的函数，python中的方法。  
+> 过程的调用包括3个重要动作：
+> - 传递控制。即将%rip压栈
+> - 传递数据。即通过寄存器和堆栈传递参数
+> - 分配和释放内存。即给局部变量分配和释放栈上的内存
+
+**调用模型**:  
+![call_stack](./call_stack.png)
+
+1. 传递控制：
+
+与16位汇编不同，x86-64的地址转移时只需要将%rip压栈
+![call](./call_ret.png)
+
+
+2. 传递参数：  
+
+- 调用参数首选用寄存器传送，当参数大于6个，使用栈帧传送。
+  - 传送用寄存器：`%rdi, %rsi, %rdx, %rcx, %r8, %r9`(视参数大小使用寄存器的部分)
+  - 栈帧传送参数：从最后一个参数依次入栈。
+
+- 调用时使用寄存器
+  - 被调用者保存寄存器：`%rbx, %rbp, %r12~%r15`  
+  	调用时子程序需要保存这部分寄存器中的值，子程序不可随意使用这些寄存器。
+  - 调用者保存寄存器：除`%rsp`以及上述寄存器外的寄存器(`%rax, %rdx, %rcx, %rdi, %rsi, %r8~%11`)  
+  	调用时父程序若有需要应先保存这部分寄存器中的值，这部分寄存器可以随意使用。
+
+3. 分配和释放内存：  
+    调整`%sp`的值，发生于
+    - 寄存器不足以储存变量
+    - 对变量进行了取地址`&`操作
+    - 变量是数组和结构变量
+
+
+### 3.2.4 数组与异质数据结构
+
+>  对齐原则：  
+> 任何`K`字节的基本对象的基址必须是`K`的整数倍  
+
+
+- 结构末尾也可能出现填充，以满足结构数组的对齐要求  
+例如：
+```C
+struct S{
+	int i;
+	int j;
+	int j;
+};
+```
+`S`的数据长度不是9而是12
