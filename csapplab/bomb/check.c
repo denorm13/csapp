@@ -1,3 +1,8 @@
+/* check.c	phase_5() help program
+ * description:
+ *		1. First, store the hex bytes of 0x4024b0 in hexstr
+ *		2. Second, use it as such form: "./ascii | ./check"
+ */
 #include<stdio.h>
 
 int main()
