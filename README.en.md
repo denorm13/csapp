@@ -1,4 +1,4 @@
-# csapplab
+# csapp
 
 #### Intro 
 Record the process of learning csapp, including labs and notes.

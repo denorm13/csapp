@@ -1,4 +1,4 @@
-# csapplab
+# csapp
 
 #### Intro
 记录我学习csapp的过程，包括实验和学习笔记。
