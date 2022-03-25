@@ -31,9 +31,11 @@ $ objdump -d bin
 ![Operand forms](accessdata.png)
 > 注：比例因子必须是1, 2, 4, 8
 
+---
+
 ### 3.2.2 指令
 
-#### **数据传送指令**
+#### 数据传送指令
 > 大写代表一类运算，根据格式自动加上指令后缀  
 > 小写代表特定运算
 
@@ -62,7 +64,7 @@ $ objdump -d bin
 
 ![stack](./stack.png)
 
-4. 算术运算：
+#### 算术运算指令：
 
 ![arithmetic](./arithmetic_operations.png)
 
@@ -77,7 +79,7 @@ $ objdump -d bin
 
 ![arithmetic](./special_arirthmetic.png)
 
-#### **条件与跳转指令**
+#### 条件与跳转指令
 
 1. 条件码设置与使用指令
 
@@ -87,7 +89,7 @@ $ objdump -d bin
 > `CF`: carry flag 进位标志位, 用于无符号数运算  
 > `OF`: overflow flag 溢出标志位，用于有符号数运算
 
-*设置条件码*：
+设置条件码：
 
 > `leap`不改变标志位  
 > 逻辑操作设置`CF`, `OF`为0  
@@ -96,7 +98,7 @@ $ objdump -d bin
 ![cmp_test](./cmp_test.png)
 
 
-*条件码的使用：set指令*
+条件码的使用：`set`指令
 > `set`指令根据`flag`的状态设定单位字节`D`为1或0
 > 练习题参看3-13,3-14
 
@@ -116,16 +118,16 @@ $ objdump -d bin
 3. 条件传送指令：  
 ![conditional_move](./conditional_move.png)
 
+---
 
 ### 3.2.3 机器级程序结构
 
-#### 控制（条件分支、循环、条件跳转的实现）
+#### 一、控制（条件分支、循环、条件跳转的实现）
 
-##### 一、条件分支
+##### 条件分支
 
 1. 条件控制的条件分支(`if`)  
 
-将如下C程序进行`-Og`编译后得到汇编代码：
 ```C
 long absdiff(long x, long y)
 {
@@ -138,11 +140,11 @@ long absdiff(long x, long y)
 	return result;
 }
 ```
+将上述C程序进行`-Og`级别编译后得到汇编代码：
 ```x86asm
 ; long absdiff(long x, long y);
 ; x in %rdi, y in %rsi
 absdiff:
-	endbr64
 	movq	%rdi, %rax
 	cmpq	%rsi, %rdi
 	jle	.L2
@@ -165,13 +167,87 @@ false:
 done:
     ...;
 ```
-2. 条件传送的条件分支：
+2. 条件传送的条件分支：(对应C中的条件表达式)
 
 > 流水线(pipelining):   
 >  x86-64处理器通过流水线提高性能，CPU并发处理多条指令，因而可预测的指令序列是必须的。  
 >  使用控制的跳转指令的指令序列是不可预测的，而使用数据的跳转指令的指令序列是可预测的。因此后者时间成本期望较低。
 
-##### 二、循环
+将上面的程序进行`-O1/2`级别的编译，得到汇编代码：
+```x86asm
+; long absdiff(long x, long y);
+; x in %rdi, y in %rsi
+absdiff:
+	movq	%rdi, %rdx
+	movq	%rsi, %rax  ;result=y
+	subq	%rsi, %rdx  ;计算x-y
+	subq	%rdi, %rax  ;计算y-x, result=y-x
+	cmpq	%rsi, %rdi  ;比较x, y
+	cmovg	%rdx, %rax  ;若x>y, result=x-y
+	ret
+```
+
+从上面的例子可以看出, 使用条件传送的条件分支会计算每一个分支中的数据，然后根据条件进行返回。因此，对于：  
+- 计算量大，时间期望成本高的情况
+- 分支内计算会出现错误或者不期望出现的副作用  
+即使进行`O1/2`级别的优化，汇编依旧会采用条件控制的分支。
+
+- 例子1：（仅仅加上两个全局变量）
+    ```C
+    long le_cnt=0;
+    long g_cnt=0;
+    long absdiff(long x, long y)
+    {
+        long result;
+        if(x>y){
+            g_cnt=1;
+            result=x-y;
+        }else{
+            le_cnt=1;
+            result=y-x;
+        }
+        return result;
+    }
+    ```
+    使用`O1/O2/Og`级别优化，生成的汇编代码都是一样的：
+    ```x86asm
+    ; long absdiff(long x, long y);
+    ; x in %rdi, y in %rsi
+    absdiff:
+        movq	%rdi, %rax
+        cmpq	%rsi, %rdi
+        jle	.L2
+        movq	$1, g_cnt(%rip)
+        subq	%rsi, %rax
+        ret
+    .L2:
+        movq	$1, le_cnt(%rip)
+        subq	%rdi, %rsi
+        movq	%rsi, %rax
+        ret
+    ```
+- 例子2：（条件表达式）
+    ```C
+    long ptrvalue(long *xp)
+    {
+        return xp ? *xp : 0;
+    }
+    ```
+    使用`O1/O2/Og`级别优化，生成的汇编代码都是一样的：
+    ```x86asm
+    ; long ptrvalue(long *xp)
+    ; xp in %rdi
+    ptrvalue:
+        movl	$0, %eax
+        testq	%rdi, %rdi
+        je	.L1
+        movq	(%rdi), %rax
+    .L1:
+        ret
+    ```
+
+
+##### 循环
 
 1. `do-while`循环
 
@@ -262,7 +338,6 @@ void switcher(long a, long b, long c, long *dest)
 `gcc`编译至汇编级别：
 ```x86asm
 switcher:
-	endbr64
 	cmpq	$7, %rdi
 	ja	.L6
 	leaq	.L4(%rip), %r8
@@ -299,8 +374,7 @@ switcher:
 	jmp	.L6
 ```
 
-
-#### 过程
+#### 二、过程
 
 > 过程：一个子例程，谓之过程。如C中的函数，python中的方法。  
 > 过程的调用包括3个重要动作：
@@ -335,20 +409,90 @@ switcher:
     - 对变量进行了取地址`&`操作
     - 变量是数组和结构变量
 
+---
 
 ### 3.2.4 数组与异质数据结构
+
+#### 数组
+
+1. 访问数组元素  
+
+| 数组类型 | 访问公式 |
+|----------|----------|
+| `T A[N]` | $\&A[i]=A+L\cdot i$ |
+| `T A[N][M]` | $\&A[i][j]=A+L\cdot(i\cdot M +j)$ |
+> 注：L为元素长度
+
+例子：访问二维数组元素
+```C
+# define N 16
+long fix_ele(long a[N][N], long i, long j)
+{
+	return a[i][j];
+}
+```
+对应汇编代码：
+```x86asm
+; long fix_ele(long a[N][N], long i, long j)
+; a in %rdi, i in %rsi, j in %rdx
+fix_ele:
+	salq	$7, %rsi            ; %rsi: L*M*i
+	addq	%rsi, %rdi          ; %rdi: a+L*M*i
+	movq	(%rdi,%rdx,8), %rax ; %rax: (a+L*M*i+L*j)
+	ret
+```
+
+2. 定长数组(fixed array)与可变数组(varible array)
+
+可变数组访问数组元素：
+```C
+long fix_ele(long n, long a[n][n], long i, long j)
+{
+	return a[i][j];
+}
+```
+对应汇编代码：
+```x86asm
+; long fix_ele(long n, long a[n][n], long i, long j)
+; n in %rdi, a in %rsi, i in %rdx, j in %rcx
+fix_ele:
+	imulq	%rdi, %rdx
+	leaq	(%rsi,%rdx,8), %rax
+	movq	(%rax,%rcx,8), %rax
+	ret
+```
+两者的区别：
+- 定长数组可使用`sal`指令计算地址
+- 可变数组使用`imul`指令计算地址，且需要一个位置存放`n`
+
+#### 异质数据结构(结构，联合)
 
 >  对齐原则：  
 > 任何`K`字节的基本对象的基址必须是`K`的整数倍  
 
 
-- 结构末尾也可能出现填充，以满足结构数组的对齐要求  
+- 结构元素中可能出现空隙，以满足结构的对齐要求  
+- 结构末尾也可能出现空隙，以满足结构数组的对齐要求  
+
+
 例如：
 ```C
-struct S{
+struct type{
 	int i;
-	int j;
+	char ch;
 	int j;
 };
+type S;
 ```
-`S`的数据长度不是9而是12
+> `S`的数据长度不是9而是12
+
+更改结构中变量顺序可以节省空间：
+```C
+struct type{
+	int i;
+	int j;
+	char ch;
+};
+type S[2];
+```
+> 此时S[1]的长度是9，S的长度是21
