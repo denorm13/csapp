@@ -1,6 +1,9 @@
 # Chapter 3 x86-64 Assembly
 
 ## 3.1 编译与反编译工具
+
+> Two-page x86-64 GDB cheet sheet: [gdbnotes-x86-64](http://csapp.cs.cmu.edu/3e/docs/gdbnotes-x86-64.pdf)
+
 > `gcc`编译文件
 ```bash
 # 将C源文件编译至汇编级别
@@ -12,7 +15,8 @@ $ gcc -c test.c
 ```
 > 反汇编器
 ```bash
-$ objdump -d bin
+$ objdump -d bin    # disasmble bin
+$ objdump -t bin    # symbol table of bin
 ```
 
 ## 3.2 x86-64 汇编语言(AT&T格式)
@@ -29,7 +33,9 @@ $ objdump -d bin
 
 4. 指令格式：
 ![Operand forms](accessdata.png)
-> 注：比例因子必须是1, 2, 4, 8
+> 注：  
+> 1. 比例因子必须是1, 2, 4, 8
+> 2. 基址和变址寄存器必须是64位寄存器
 
 ---
 
@@ -496,3 +502,12 @@ struct type{
 type S[2];
 ```
 > 此时S[1]的长度是9，S的长度是21
+
+
+## 3.3 栈溢出
+
+三种防止栈溢出的方式：  
+1. 写安全的代码:laughing:
+2. 栈随机化
+3. 栈不可执行
+4. 哨兵(canary)
