@@ -1,0 +1,21 @@
+# start address
+	.pos 0
+	irmovq	stack, %rsp
+	call 	main
+	halt
+
+main:
+	call	poptest
+	ret
+
+poptest:
+	rrmovq	%rsp, %rdi
+	irmovq 	0xabcd, %rsi
+	pushq	%rsi	
+	popq	%rsp
+	rrmovq	%rsp, %rax
+	rrmovq	%rdi, %rsp
+	ret
+
+	.pos 0x200
+stack:

@@ -6,7 +6,7 @@ YACC=bison
 LEXLIB = -lfl
 YAS=./yas
 
-all: yis yas hcl2c
+all: yis yas hcl2c hcl2v hcl2u
 
 # These are implicit rules for making .yo files from .ys files.
 # E.g., make sum.yo
