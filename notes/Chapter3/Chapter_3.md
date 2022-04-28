@@ -95,16 +95,20 @@ $ objdump -t bin    # symbol table of bin
 > `CF`: carry flag 进位标志位, 用于无符号数运算  
 > `OF`: overflow flag 溢出标志位，用于有符号数运算
 
-设置条件码：
+**设置条件码**：
 
-> `leap`不改变标志位  
-> 逻辑操作设置`CF`, `OF`为0  
-> `dec, inc`设置`OF`, `ZF`, 但不改变`CF`
+- 除`leap`外, 图3.10中的所有运算指令都能改变条件码
+    > `leap`不改变标志位  
+    > 逻辑操作设置`CF`, `OF`为0  
+    > 移位操作将`CF`设置为移出的最后一个bit
+    > `dec, inc`设置`OF`, `ZF`, 但不改变`CF`
+
+- 下面的指令改变条件码但不改变寄存器的值
 
 ![cmp_test](./cmp_test.png)
 
 
-条件码的使用：`set`指令
+**条件码的使用**：`set`指令
 > `set`指令根据`flag`的状态设定单位字节`D`为1或0
 > 练习题参看3-13,3-14
 
