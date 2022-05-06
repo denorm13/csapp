@@ -16,12 +16,78 @@ ncopy:
 ##################################################################
 # You can modify this portion
 	# Loop header
-	irmovq $7, %rcx
-	irmovq $0xfffffffffffffff8, %rbx
-	andq %rdx, %rcx
-	andq %rdx, %rbx
-	jle mod
+	irmovq $7, %r9
+	andq %rdx, %r9
+	rrmovq %r9, %r11
+	je continue
+	mrmovq (%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, (%rsi)
+	andq %r10, %r10
+	jle next1
+	iaddq $1, %rax
+next1:
+	iaddq $-1, %r9
+	je continue
+	mrmovq 8(%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, 8(%rsi)
+	andq %r10, %r10
+	jle next2
+	iaddq $1, %rax
+next2:
+	iaddq $-1, %r9
+	je continue
+	mrmovq 16(%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, 16(%rsi)
+	andq %r10, %r10
+	jle next3
+	iaddq $1, %rax
+next3:
+	iaddq $-1, %r9
+	je continue
+	mrmovq 24(%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, 24(%rsi)
+	andq %r10, %r10
+	jle next4
+	iaddq $1, %rax
+next4:
+	iaddq $-1, %r9
+	je continue
+	mrmovq 32(%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, 32(%rsi)
+	andq %r10, %r10
+	jle next5
+	iaddq $1, %rax
+next5:
+	iaddq $-1, %r9
+	je continue
+	mrmovq 40(%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, 40(%rsi)
+	andq %r10, %r10
+	jle next6
+	iaddq $1, %rax
+next6:
+	iaddq $-1, %r9
+	je continue
+	mrmovq 48(%rdi), %r10
+	iaddq $8, %rcx
+	rmmovq %r10, 48(%rsi)
+	andq %r10, %r10
+	jle continue
+	iaddq $1, %rax
+
+continue:
+	subq %r11, %rdx	
+	addq %rcx, %rdi
+	addq %rcx, %rsi
 Loop:	
+	andq %rdx,%rdx		# len <= 0?
+	jle Done		# if so, goto Done:
 	mrmovq (%rdi), %r8	# read val from src...
 	mrmovq 8(%rdi), %r9
 	mrmovq 16(%rdi), %r10
@@ -29,7 +95,7 @@ Loop:
 	mrmovq 32(%rdi), %r12
 	mrmovq 40(%rdi), %r13
 	mrmovq 48(%rdi), %r14
-	mrmovq 56(%rdi), %rbp
+	mrmovq 56(%rdi), %rcx
 	rmmovq %r8, (%rsi)	# ...and store it to dst
 	rmmovq %r9, 8(%rsi)
 	rmmovq %r10, 16(%rsi)
@@ -37,7 +103,7 @@ Loop:
 	rmmovq %r12, 32(%rsi)
 	rmmovq %r13, 40(%rsi)
 	rmmovq %r14, 48(%rsi)
-	rmmovq %rbp, 56(%rsi)
+	rmmovq %rcx, 56(%rsi)
 	andq %r8, %r8		# val <= 0?
 	jle Next1		# if so, goto Npos:
 	iaddq $1, %rax
@@ -66,74 +132,14 @@ Next6:
 	jle Next7
 	iaddq $1, %rax
 Next7:
-	andq %rbp, %rbp
+	andq %rcx, %rcx
 	jle Npos
 	iaddq $1, %rax
 Npos:	
-	iaddq $-8, %rbx		# len--
+	iaddq $-8, %rdx		# len--
 	iaddq $64, %rdi		# src++
 	iaddq $64, %rsi		# dst++
-	andq %rbx, %rbx		# len <= 0?
-	jg Loop 		# if so, goto Done:
-
-mod:
-	andq %rcx, %rcx
-	je Done
-	mrmovq (%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, (%rsi)
-	je end
-	andq %r10, %r10
-	jle next1
-	iaddq $1, %rax	
-next1:
-	mrmovq 8(%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, 8(%rsi)
-	je end
-	andq %r10, %r10
-	jle next2
-	iaddq $1, %rax	
-next2:
-	mrmovq 16(%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, 16(%rsi)
-	je end
-	andq %r10, %r10
-	jle next3
-	iaddq $1, %rax	
-next3:
-	mrmovq 24(%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, 24(%rsi)
-	je end
-	andq %r10, %r10
-	jle next4
-	iaddq $1, %rax	
-next4:
-	mrmovq 32(%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, 32(%rsi)
-	je end
-	andq %r10, %r10
-	jle next5
-	iaddq $1, %rax	
-next5:
-	mrmovq 40(%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, 40(%rsi)
-	je end
-	andq %r10, %r10
-	jle next6
-	iaddq $1, %rax	
-next6:
-	mrmovq 48(%rdi), %r10
-	iaddq $-1, %rcx	
-	rmmovq %r10, 48(%rsi)
-end:
-	andq %r10, %r10
-	jle Done
-	iaddq $1, %rax
+	jmp Loop		# if so, goto Loop:
 ##################################################################
 # Do not modify the following section of code
 # Function epilogue.

@@ -29,23 +29,124 @@ ncopy:
 ##################################################################
 # You can modify this portion
 	# Loop header
-	xorq %rax,%rax		# count = 0;
-	andq %rdx,%rdx		# len <= 0?
-	jle Done		# if so, goto Done:
+	irmovq $7, %rcx
+	irmovq $0xfffffffffffffff8, %rbx
+	andq %rdx, %rcx
+	andq %rdx, %rbx
+	jle mod
+Loop:	
+	mrmovq (%rdi), %r8	# read val from src...
+	mrmovq 8(%rdi), %r9
+	mrmovq 16(%rdi), %r10
+	mrmovq 24(%rdi), %r11
+	mrmovq 32(%rdi), %r12
+	mrmovq 40(%rdi), %r13
+	mrmovq 48(%rdi), %r14
+	mrmovq 56(%rdi), %rbp
+	rmmovq %r8, (%rsi)	# ...and store it to dst
+	rmmovq %r9, 8(%rsi)
+	rmmovq %r10, 16(%rsi)
+	rmmovq %r11, 24(%rsi)
+	rmmovq %r12, 32(%rsi)
+	rmmovq %r13, 40(%rsi)
+	rmmovq %r14, 48(%rsi)
+	rmmovq %rbp, 56(%rsi)
+	andq %r8, %r8		# val <= 0?
+	jle Next1		# if so, goto Npos:
+	iaddq $1, %rax
+Next1:
+	andq %r9, %r9
+	jle Next2
+	iaddq $1, %rax
+Next2:
+	andq %r10, %r10
+	jle Next3
+	iaddq $1, %rax
+Next3:
+	andq %r11, %r11
+	jle Next4
+	iaddq $1, %rax
+Next4:
+	andq %r12, %r12
+	jle Next5
+	iaddq $1, %rax
+Next5:
+	andq %r13, %r13
+	jle Next6
+	iaddq $1, %rax
+Next6:
+	andq %r14, %r14
+	jle Next7
+	iaddq $1, %rax
+Next7:
+	andq %rbp, %rbp
+	jle Npos
+	iaddq $1, %rax
+Npos:	
+	iaddq $-8, %rbx		# len--
+	iaddq $64, %rdi		# src++
+	iaddq $64, %rsi		# dst++
+	andq %rbx, %rbx		# len <= 0?
+	jg Loop 		# if so, goto Done:
 
-Loop:	mrmovq (%rdi), %r10	# read val from src...
-	rmmovq %r10, (%rsi)	# ...and store it to dst
-	andq %r10, %r10		# val <= 0?
-	jle Npos		# if so, goto Npos:
-	irmovq $1, %r10
-	addq %r10, %rax		# count++
-Npos:	irmovq $1, %r10
-	subq %r10, %rdx		# len--
-	irmovq $8, %r10
-	addq %r10, %rdi		# src++
-	addq %r10, %rsi		# dst++
-	andq %rdx,%rdx		# len > 0?
-	jg Loop			# if so, goto Loop:
+mod:
+	andq %rcx, %rcx
+	je Done
+	mrmovq (%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, (%rsi)
+	je end
+	andq %r10, %r10
+	jle next1
+	iaddq $1, %rax	
+next1:
+	mrmovq 8(%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, 8(%rsi)
+	je end
+	andq %r10, %r10
+	jle next2
+	iaddq $1, %rax	
+next2:
+	mrmovq 16(%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, 16(%rsi)
+	je end
+	andq %r10, %r10
+	jle next3
+	iaddq $1, %rax	
+next3:
+	mrmovq 24(%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, 24(%rsi)
+	je end
+	andq %r10, %r10
+	jle next4
+	iaddq $1, %rax	
+next4:
+	mrmovq 32(%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, 32(%rsi)
+	je end
+	andq %r10, %r10
+	jle next5
+	iaddq $1, %rax	
+next5:
+	mrmovq 40(%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, 40(%rsi)
+	je end
+	andq %r10, %r10
+	jle next6
+	iaddq $1, %rax	
+next6:
+	mrmovq 48(%rdi), %r10
+	iaddq $-1, %rcx	
+	rmmovq %r10, 48(%rsi)
+end:
+	andq %r10, %r10
+	jle Done
+	iaddq $1, %rax
 ##################################################################
 # Do not modify the following section of code
 # Function epilogue.
@@ -62,8 +163,8 @@ EndFun:
 ###############################
 	.align 8
 src:
-	.quad 1
-	.quad -2
+	.quad -1
+	.quad 2
 	.quad 3
 	.quad -4
 	.quad 0xbcdefa # This shouldn't get moved
