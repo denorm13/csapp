@@ -145,3 +145,78 @@ linux$ find / -iname libtcl.so
     % 
     ```
     之后我在VM的ubuntu环境下安装了`tcl\tk`，发现两者的文件配置是一样的，貌似单纯只是因为`wsl`不支持GUI工具。这个问题，暂时放弃解决...
+
+
+## Part A
+
+Part A的三个小程序比较简单，掌握了Y86的基本指令就能很轻松写出来，源文件如下:
+
+1. [`sum.ys`](./sim/misc/sum.ys) 
+2. [`rsum.ys`](./sim/misc/rsum.ys) 
+3. [`copy.ys`](./sim/misc/copy.ys) 
+
+**一些收获**：
+- 为什么初始化寄存器的值为0时要使用`xorq`命令？
+    
+    之间对这个问题一直一知半解，经过这个小实验的学习，我明白了，答案其实很简单：  
+    Y86中，`xorq`的编码是2bytes，而`irmovq`是10bytes。为了优化性能，采用哪一个指令是显而易见的。  
+    其他指令集也是同样的道理。
+
+
+## Part B
+
+### 实验准备
+
+HCL硬件控制语言是HDL(例如Verilog)的一个子集，与Y86类似是用于教学的一种硬件语言。  
+![HCL](./HCL.png)
+
+HCL主要用于描述逻辑单元的行为：描述及控制逻辑单元的输入输出(例如Mux4的输入s0, s1, 输出out4)。除此之外的硬件功能在这个实验中是由实验设计者设计的模拟器来实现，我们需要编写的的只有上图中的`pipe-std.hcl`部分的`.hcl`文件，其余部分以链接的方式形成最终的模拟器。  
+因此我们只需要明白如下几点就可以顺利的使用他们设计的HCL语言：
+
+1. “宏替换”
+```
+boolsig name 'C-expr'
+intsig name 'C-expr'
+```
+上面的语句将.hcl中的`name`替换为C语言语句`C-expr`，C-expr不包含`'`和`\n`
+
+2. 定义`C语句`
+```
+quote   'string'
+```
+上面的语句定义一个C语言中的语句，string不包含`.`和`\n`
+
+### 实验内容
+
+本实验的目的是在Y86指令集中加入一条`iaddq`使之能让寄存器与常数值相加。
+
+1. 指令构成
+
+![iadd_q](./iaddq.png)
+
+2. 分阶段动作
+
+| Stage | iaddq V, rB |
+|-------|-------------|
+| Fetch | icode:ifun <- C : 0 <br> rA : rB <- F : rB <br> valC <- V <br> valP <- PC+10|
+| Decode | valB <- R[rB] |
+| Execute | valE <- valB+valC <br> set CC|
+| Memory | | 
+| Write bakc | R[rB] <- valE |
+| Update PC | PC <- valP |
+
+3. 根据指令动作修改`seq-full.hcl`
+
+源文件：[`seq-full.hcl`](./sim/seq/seq-full.hcl)
+
+4. 回归测试
+
+最后别忘了进行一下回归测试，这用来检测我们修改的`iaddq`有没有引入bug
+
+```bash
+cd ../ptest
+make SIM=../seq/ssim
+make SIM=../seq/ssim TFLAGS=-i
+```
+
+## Part C
