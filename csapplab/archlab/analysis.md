@@ -220,3 +220,24 @@ make SIM=../seq/ssim TFLAGS=-i
 ```
 
 ## Part C
+
+先上结果：
+
+[`ncopy.ys`](./sim/pipe/ncopy.ys)
+
+最后得分：`50.3/60.0`
+
+我主要做了如下修改：
+
+1. hcl逻辑结构的修改：[`pipe-super.hcl`](./sim/pipe/pipe-super.hcl)
+    - pipe结构加入了指令`iaddq`
+    - pipe分支预测策略改为`btfnt`模式
+
+
+2. `ncopy.ys`代码结构的修改：
+    - 对循环主体进行8路循环展开
+    - 对余下部分进行支路展开，不进行循环
+    - 调整了`rmmovq`指令前后的指令顺序，经过调整，我的代码已经完全避开了加载互锁
+    - 去除了一些多余指令
+
+写的有点累，分析报告不想写太多了，反正没人看。:mask:

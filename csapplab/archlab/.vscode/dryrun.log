@@ -1,0 +1,5 @@
+make.exe --dry-run --always-make --keep-going --print-directory
+make.exe: Entering directory 'c:/Users/26454/Mycodes/csapp/csapplab/archlab'
+(cd sim; make)
+make.exe: Leaving directory 'c:/Users/26454/Mycodes/csapp/csapplab/archlab'
+ 
